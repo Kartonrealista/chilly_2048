@@ -75,7 +75,7 @@ impl Board {
                             width,
                             height,
                             direction,
-                        )
+                        );
                     });
                 });
                 self.collapse_left(height, width);
@@ -251,11 +251,12 @@ impl Board {
                 *previous = self.0[pair_to_index(h, w, width)];
             }
             _ => {
-                let current = self.0[pair_to_index(h, w, width)];
+                let mut current = self.0[pair_to_index(h, w, width)];
                 if previous.tilecontent == current.tilecontent {
                     if let Some(content) = previous.tilecontent {
                         self.0[previous.id].tilecontent = Some(content * 2);
-                        self.0[current.id].tilecontent = None
+                        self.0[current.id].tilecontent = None;
+                        current.tilecontent = None
                     }
                 }
                 *previous = current;
