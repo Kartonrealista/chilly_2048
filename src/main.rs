@@ -6,8 +6,8 @@ use iced::{
     executor, keyboard, subscription,
     theme::{self},
     widget::{self, button, container, text, text_input, Column, Row, Text},
-    Alignment, Application, Command, Element, Event, Length, Renderer,
-    Settings, Subscription, Theme,
+    Alignment, Application, Command, Element, Event, Length, Renderer, Settings, Subscription,
+    Theme,
 };
 use rand::seq::IteratorRandom;
 use rand::{seq::SliceRandom, thread_rng};
@@ -47,17 +47,11 @@ impl Board {
         let mut ids: Vec<usize> = (0..(width * height)).collect();
         rand::seq::SliceRandom::shuffle(ids.as_mut_slice(), &mut thread_rng());
         ids.iter().take(2).for_each(|&id| {
-            out[id].tilecontent =
-                Some(*Self::TWO_OR_FOUR.choose(&mut thread_rng()).unwrap())
+            out[id].tilecontent = Some(*Self::TWO_OR_FOUR.choose(&mut thread_rng()).unwrap())
         });
         Board(out)
     }
-    fn move_tile_content(
-        &mut self,
-        direction: keyboard::KeyCode,
-        height: usize,
-        width: usize,
-    ) {
+    fn move_tile_content(&mut self, direction: keyboard::KeyCode, height: usize, width: usize) {
         let old_board = self.clone();
         let mut previous = Tile {
             tilecontent: None,
@@ -68,14 +62,7 @@ impl Board {
                 self.collapse_left(height, width);
                 (0..height).for_each(|h| {
                     (0..width).for_each(|w| {
-                        self.merge_neighbouring(
-                            h,
-                            w,
-                            &mut previous,
-                            width,
-                            height,
-                            direction,
-                        );
+                        self.merge_neighbouring(h, w, &mut previous, width, height, direction);
                     });
                 });
                 self.collapse_left(height, width);
@@ -84,14 +71,7 @@ impl Board {
                 self.collapse_right(height, width);
                 (0..height).for_each(|h| {
                     (0..width).rev().for_each(|w| {
-                        self.merge_neighbouring(
-                            h,
-                            w,
-                            &mut previous,
-                            width,
-                            height,
-                            direction,
-                        )
+                        self.merge_neighbouring(h, w, &mut previous, width, height, direction)
                     });
                 });
                 self.collapse_right(height, width);
@@ -100,14 +80,7 @@ impl Board {
                 self.collapse_up(height, width);
                 (0..width).for_each(|w| {
                     (0..height).for_each(|h| {
-                        self.merge_neighbouring(
-                            h,
-                            w,
-                            &mut previous,
-                            width,
-                            height,
-                            direction,
-                        )
+                        self.merge_neighbouring(h, w, &mut previous, width, height, direction)
                     });
                 });
                 self.collapse_up(height, width);
@@ -116,14 +89,7 @@ impl Board {
                 self.collapse_down(height, width);
                 (0..width).for_each(|w| {
                     (0..height).rev().for_each(|h| {
-                        self.merge_neighbouring(
-                            h,
-                            w,
-                            &mut previous,
-                            width,
-                            height,
-                            direction,
-                        )
+                        self.merge_neighbouring(h, w, &mut previous, width, height, direction)
                     });
                 });
                 self.collapse_down(height, width);
@@ -145,17 +111,17 @@ impl Board {
     fn collapse_left(&mut self, height: usize, width: usize) {
         (0..height).for_each(|h| {
             let mut row = vec![];
-            (0..width)
-                .for_each(|w| row.push(self.0[pair_to_index(h, w, width)]));
-            let collapsed =
-                row.iter().filter(|&tile| tile.tilecontent.is_some());
+            (0..width).for_each(|w| row.push(self.0[pair_to_index(h, w, width)]));
+            let collapsed = row.iter().filter(|&tile| tile.tilecontent.is_some());
+            if collapsed.clone().copied().collect::<Vec<Tile>>() == row {
+                return;
+            }
             collapsed
                 .clone()
                 .copied()
                 .enumerate()
                 .for_each(|(w, tile)| {
-                    self.0[pair_to_index(h, w, width)].tilecontent =
-                        tile.tilecontent;
+                    self.0[pair_to_index(h, w, width)].tilecontent = tile.tilecontent;
                 });
             (collapsed.count()..width).for_each(|w| {
                 self.0[pair_to_index(h, w, width)].tilecontent = None;
@@ -168,35 +134,32 @@ impl Board {
             (0..width)
                 .rev()
                 .for_each(|w| row.push(self.0[pair_to_index(h, w, width)]));
-            let collapsed =
-                row.iter().filter(|&tile| tile.tilecontent.is_some());
+            let collapsed = row.iter().filter(|&tile| tile.tilecontent.is_some());
+            if collapsed.clone().copied().collect::<Vec<Tile>>() == row {
+                return;
+            }
             collapsed
                 .clone()
                 .copied()
                 .enumerate()
                 .for_each(|(w, tile)| {
-                    self.0[pair_to_index(h, width - w - 1, width)]
-                        .tilecontent = tile.tilecontent;
+                    self.0[pair_to_index(h, width - w - 1, width)].tilecontent = tile.tilecontent;
                 });
             (collapsed.count()..width).for_each(|w| {
-                self.0[pair_to_index(h, width - w - 1, width)].tilecontent =
-                    None;
+                self.0[pair_to_index(h, width - w - 1, width)].tilecontent = None;
             })
         });
     }
     fn collapse_up(&mut self, height: usize, width: usize) {
         (0..width).for_each(|w| {
             let mut column = vec![];
-            (0..height)
-                .for_each(|h| column.push(self.0[pair_to_index(h, w, width)]));
-            let collapsed =
-                column.iter().filter(|&tile| tile.tilecontent.is_some());
+            (0..height).for_each(|h| column.push(self.0[pair_to_index(h, w, width)]));
+            let collapsed = column.iter().filter(|&tile| tile.tilecontent.is_some());
             if collapsed.clone().copied().collect::<Vec<Tile>>() == column {
                 return;
             }
             collapsed.clone().enumerate().for_each(|(h, tile)| {
-                self.0[pair_to_index(h, w, width)].tilecontent =
-                    tile.tilecontent;
+                self.0[pair_to_index(h, w, width)].tilecontent = tile.tilecontent;
             });
             (collapsed.count()..height).for_each(|h| {
                 self.0[pair_to_index(h, w, width)].tilecontent = None;
@@ -209,18 +172,15 @@ impl Board {
             (0..height)
                 .rev()
                 .for_each(|h| column.push(self.0[pair_to_index(h, w, width)]));
-            let collapsed =
-                column.iter().filter(|&tile| tile.tilecontent.is_some());
+            let collapsed = column.iter().filter(|&tile| tile.tilecontent.is_some());
             if collapsed.clone().copied().collect::<Vec<Tile>>() == column {
                 return;
             }
             collapsed.clone().enumerate().for_each(|(h, tile)| {
-                self.0[pair_to_index(height - h - 1, w, width)].tilecontent =
-                    tile.tilecontent;
+                self.0[pair_to_index(height - h - 1, w, width)].tilecontent = tile.tilecontent;
             });
             (collapsed.count()..height).for_each(|h| {
-                self.0[pair_to_index(height - h - 1, w, width)].tilecontent =
-                    None;
+                self.0[pair_to_index(height - h - 1, w, width)].tilecontent = None;
             })
         });
     }
@@ -237,17 +197,13 @@ impl Board {
             (_, 0) if direction == keyboard::KeyCode::Left => {
                 *previous = self.0[pair_to_index(h, w, width)];
             }
-            (_, w)
-                if direction == keyboard::KeyCode::Right && w == width - 1 =>
-            {
+            (_, w) if direction == keyboard::KeyCode::Right && w == width - 1 => {
                 *previous = self.0[pair_to_index(h, w, width)];
             }
             (0, _) if direction == keyboard::KeyCode::Up => {
                 *previous = self.0[pair_to_index(h, w, width)];
             }
-            (h, _)
-                if direction == keyboard::KeyCode::Down && h == height - 1 =>
-            {
+            (h, _) if direction == keyboard::KeyCode::Down && h == height - 1 => {
                 *previous = self.0[pair_to_index(h, w, width)];
             }
             _ => {
@@ -301,10 +257,7 @@ impl Application for Game {
                 start_pressed: false,
             },
         };
-        (
-            game,
-            Command::none(),
-        )
+        (game, Command::none())
     }
 
     fn title(&self) -> String {
@@ -329,14 +282,9 @@ impl Application for Game {
                 self.board = Board::new(self.menu.width, self.menu.height);
                 self.has_ended = false;
             }
-            Message::Event(Keyboard(keyboard::Event::KeyPressed {
-                key_code,
-                ..
-            })) => self.board.move_tile_content(
-                key_code,
-                self.menu.height,
-                self.menu.width,
-            ),
+            Message::Event(Keyboard(keyboard::Event::KeyPressed { key_code, .. })) => self
+                .board
+                .move_tile_content(key_code, self.menu.height, self.menu.width),
             _ => {}
         };
 
@@ -390,14 +338,9 @@ fn playfield(game: &Game) -> iced::widget::Container<Message> {
             .width(50),
     };
     let playboard = (0..game.menu.width).fold(Row::new(), |acc, column| {
-        let new_column =
-            (0..game.menu.height).fold(Column::new(), |acc2, row| {
-                acc2.push(tilebutton(pair_to_index(
-                    row,
-                    column,
-                    game.menu.width,
-                )))
-            });
+        let new_column = (0..game.menu.height).fold(Column::new(), |acc2, row| {
+            acc2.push(tilebutton(pair_to_index(row, column, game.menu.width)))
+        });
         acc.push(new_column.spacing(2).align_items(Alignment::Center))
     });
     let menu_button = button("MENU")
@@ -426,10 +369,8 @@ fn centralize_tile_content(tile_content: Text<Renderer>) -> Text<Renderer> {
 }
 
 fn menu<'a>(game: &Game) -> iced::widget::Container<'a, Message> {
-    let width_box =
-        text_input("", &game.menu.width_inptut).on_input(Message::InputWidth);
-    let height_box =
-        text_input("", &game.menu.height_inptut).on_input(Message::InputHeight);
+    let width_box = text_input("", &game.menu.width_inptut).on_input(Message::InputWidth);
+    let height_box = text_input("", &game.menu.height_inptut).on_input(Message::InputHeight);
     let start_game_button = button(centralize_tile_content(text("START")))
         .on_press(Message::StartPressed)
         .style(theme::Button::Positive)
@@ -437,8 +378,7 @@ fn menu<'a>(game: &Game) -> iced::widget::Container<'a, Message> {
         .height(55);
     container(
         iced::widget::column![
-            iced::widget::row![text("Width: "), width_box.width(40)]
-                .align_items(Alignment::Center),
+            iced::widget::row![text("Width: "), width_box.width(40)].align_items(Alignment::Center),
             iced::widget::row![text("Height: "), height_box.width(40)]
                 .align_items(Alignment::Center),
             start_game_button
