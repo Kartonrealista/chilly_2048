@@ -233,7 +233,6 @@ pub enum Message {
     FontLoaded(result::Result<(), iced::font::Error>),
     InputWidth(String),
     InputHeight(String),
-    InputMineCount(String),
     StartPressed,
     GotoMenu,
     Event(Event),
